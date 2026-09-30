@@ -1,0 +1,16 @@
+{
+  "GSE135893": {
+    "repair_expression": "data/GSE135893/repair_expression.csv",
+    "repair_pseudotime": "data/GSE135893/repair_pseudotime.csv",
+    "disease_expression": "data/GSE135893/disease_expression.csv",
+    "disease_pseudotime": "data/GSE135893/disease_pseudotime.csv",
+    "signed_reference": "data/GSE135893/reference_signed.csv"
+  },
+  "GSE136831": {
+    "repair_expression": "data/GSE136831/repair_expression.csv",
+    "repair_pseudotime": "data/GSE136831/repair_pseudotime.csv",
+    "disease_expression": "data/GSE136831/disease_expression.csv",
+    "disease_pseudotime": "data/GSE136831/disease_pseudotime.csv",
+    "signed_reference": "data/GSE136831/reference_signed.csv"
+  }
+}
