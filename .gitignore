@@ -1,0 +1,55 @@
+# Python
+__pycache__/
+*.py[cod]
+*.so
+.pytest_cache/
+.mypy_cache/
+.venv/
+venv/
+env/
+
+# IDE / OS
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Local datasets: keep README and demo data tracked
+/data/*
+!/data/README.md
+!/data/demo/
+!/data/demo/**
+/datasets/
+/raw_data/
+*.h5
+*.h5ad
+*.h5seurat
+*.rds
+*.mtx
+*.bigWig
+*.bw
+*.bam
+*.bai
+
+# Checkpoints / training outputs
+/outputs/
+/output/
+/logs/
+/runs/
+/checkpoints/
+*.pt
+*.pth
+*.t7
+*.ckpt
+
+# Large local archives
+*.zip
+*.rar
+*.7z
+*.tar
+*.tar.gz
+
+# Temporary / generated
+*.tmp
+*.log
+~$*

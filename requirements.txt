@@ -1,0 +1,16 @@
+# Core numerical / tabular stack
+numpy>=1.24
+pandas>=2.0
+scipy>=1.10
+scikit-learn>=1.3
+openpyxl>=3.1
+
+# Deep learning / graph stack
+# Install a PyTorch build compatible with your CUDA/CPU environment.
+torch>=2.1
+torch-geometric>=2.5
+torch-geometric-signed-directed==1.1.1
+tensorboardX>=2.6
+
+# Utility
+networkx>=3.0
