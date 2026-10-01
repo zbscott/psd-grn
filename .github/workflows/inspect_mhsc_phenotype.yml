@@ -18,10 +18,10 @@ jobs:
       - name: Install deps
         run: pip install pandas
       - name: Inspect
-        run: python experiments/inspect_mhsc_phenotype_data.py | tee inspect_mhsc.log
+        run: python experiments/inspect_mhsc_labels2.py | tee inspect_labels2.log
       - name: Upload log
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: inspect-mhsc-log
-          path: inspect_mhsc.log
+          name: inspect-mhsc-labels2-log
+          path: inspect_labels2.log
