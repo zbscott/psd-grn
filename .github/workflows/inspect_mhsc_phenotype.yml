@@ -1,4 +1,4 @@
-name: Inspect mHSC phenotype dataset
+name: Build mHSC real phenotype dataset
 
 on:
   push:
@@ -7,21 +7,24 @@ on:
   workflow_dispatch:
 
 jobs:
-  inspect:
+  build:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
       - name: Install deps
-        run: pip install pandas
-      - name: Inspect
-        run: python experiments/mhsc_celltypes_stats.py | tee mhsc_celltypes_stats.log
-      - name: Upload log
-        if: always()
+        run: pip install pandas numpy
+      - name: Build dataset
+        run: python experiments/build_mhsc_real_phenotype_dataset.py | tee build_mhsc_dataset.log
+      - name: Upload dataset
         uses: actions/upload-artifact@v4
         with:
-          name: mhsc-celltypes-stats-log
-          path: mhsc_celltypes_stats.log
+          name: GSE81682-mHSC-real-phenotype-dataset
+          compression-level: 0
+          path: |
+            results/GSE81682_mHSC_real_phenotype_dataset.zip
+            results/GSE81682_mHSC_real_phenotype_dataset/
+            build_mhsc_dataset.log
