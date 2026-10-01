@@ -1,0 +1,27 @@
+name: Inspect mHSC phenotype dataset
+
+on:
+  push:
+    branches:
+      - mhsc-phenotype-dataset
+  workflow_dispatch:
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install deps
+        run: pip install pandas
+      - name: Inspect
+        run: python experiments/inspect_mhsc_phenotype_data.py | tee inspect_mhsc.log
+      - name: Upload log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: inspect-mhsc-log
+          path: inspect_mhsc.log
