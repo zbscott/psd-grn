@@ -21,11 +21,11 @@ jobs:
           pip install numpy pandas scipy scikit-learn torch
       - name: Run pilot
         run: |
-          python experiments/graph_classification_pilot.py | tee pilot.log
+          python experiments/graph_classification_quick.py | tee pilot.log
       - name: Upload results
         uses: actions/upload-artifact@v4
         with:
           name: graph-classification-pilot-results
           path: |
-            results/graph_classification_pilot/
+            results/graph_classification_quick/
             pilot.log
