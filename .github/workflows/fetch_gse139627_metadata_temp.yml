@@ -1,0 +1,21 @@
+name: temp-fetch-gse139627-metadata
+on:
+  push:
+    paths:
+      - '.github/workflows/fetch_gse139627_metadata_temp.yml'
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download metadata
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -L --fail --retry 3 -o GSE139627_mouse_sample_metadata.txt.gz             https://ftp.ncbi.nlm.nih.gov/geo/series/GSE139nnn/GSE139627/suppl/GSE139627_mouse_sample_metadata.txt.gz
+          gzip -dc GSE139627_mouse_sample_metadata.txt.gz | head -n 5
+          sha256sum GSE139627_mouse_sample_metadata.txt.gz
+      - uses: actions/upload-artifact@v4
+        with:
+          name: GSE139627_metadata
+          path: GSE139627_mouse_sample_metadata.txt.gz
+          retention-days: 1
