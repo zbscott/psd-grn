@@ -123,11 +123,11 @@ jobs:
           pr['pair']=pr.source_gene+'\t'+pr.target_gene
           conflict=set(pr.groupby('pair').sign.nunique().loc[lambda s:s>1].index)
           pr=pr[~pr.pair.isin(conflict)].copy()
-          def collapse(g):
-              return pd.Series({'sign':int(g.sign.iloc[0]),'source_db':'+'.join(sorted(set(g.source_db.astype(str)))),
-                                'confidence':'+'.join(sorted(set(g.confidence.astype(str))))})
-          prov=pr.groupby(['source_gene','target_gene'],sort=True).apply(collapse,include_groups=False).reset_index()
-          prov.columns=['source','target','sign','source_db','confidence']
+          prov=(pr.groupby(['source_gene','target_gene'],as_index=False,sort=True)
+                .agg(sign=('sign','first'),
+                     source_db=('source_db',lambda x: '+'.join(sorted(set(map(str,x))))),
+                     confidence=('confidence',lambda x: '+'.join(sorted(set(map(str,x)))))))
+          prov=prov.rename(columns={'source_gene':'source','target_gene':'target'})
           gold=prov[['source','target','sign']].copy()
 
           # Save PSD-GRN-ready expression as TPM (gene x cell); local-group code applies log2(x+1).
