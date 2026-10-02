@@ -1,0 +1,66 @@
+name: temp-fetch-gse139627-supp
+on:
+  push:
+    paths:
+      - '.github/workflows/fetch_gse139627_supp_temp.yml'
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install
+        run: pip install requests openpyxl pandas
+      - name: Fetch PMC OA package and GEO metadata
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import requests, re, tarfile, os, glob, json, pandas as pd
+          from pathlib import Path
+          xml=requests.get('https://www.ncbi.nlm.nih.gov/pmc/utils/oa/oa.fcgi?id=PMC8324815',timeout=60).text
+          print(xml)
+          m=re.search(r'href="(ftp://[^"]+\.tar\.gz)"',xml)
+          if not m:
+              m=re.search(r'href="(https?://[^"]+\.tar\.gz)"',xml)
+          if not m:
+              raise RuntimeError('OA package URL not found')
+          url=m.group(1).replace('ftp://','https://')
+          print('OA_URL',url)
+          r=requests.get(url,timeout=180)
+          r.raise_for_status()
+          open('pmc_package.tar.gz','wb').write(r.content)
+          with tarfile.open('pmc_package.tar.gz','r:gz') as tf:
+              tf.extractall('pmc')
+          xlsx=glob.glob('pmc/**/*.xlsx',recursive=True)
+          print('XLSX_FILES',[(p,os.path.getsize(p)) for p in xlsx])
+          import openpyxl
+          rows=[]
+          for p in xlsx:
+              wb=openpyxl.load_workbook(p,read_only=True,data_only=True)
+              rows.append({'path':p,'bytes':os.path.getsize(p),'sheets':'|'.join(wb.sheetnames)})
+              if os.path.getsize(p)>5_000_000:
+                  print('CANDIDATE',p,wb.sheetnames)
+                  for s in wb.sheetnames:
+                      ws=wb[s]
+                      vals=[]
+                      for rr in ws.iter_rows(min_row=1,max_row=min(8,ws.max_row),values_only=True):
+                          vals.append(rr[:20])
+                      print('SHEET',s,'DIM',ws.max_row,ws.max_column,'HEAD',vals)
+          pd.DataFrame(rows).to_csv('supplementary_xlsx_inventory.csv',index=False)
+          # copy largest xlsx as TableS1 candidate
+          largest=max(xlsx,key=os.path.getsize)
+          Path('TableS1_candidate.xlsx').write_bytes(Path(largest).read_bytes())
+          # GEO sample metadata
+          u='https://ftp.ncbi.nlm.nih.gov/geo/series/GSE139nnn/GSE139627/suppl/GSE139627_mouse_sample_metadata.txt.gz'
+          rr=requests.get(u,timeout=60); rr.raise_for_status(); open('GSE139627_mouse_sample_metadata.txt.gz','wb').write(rr.content)
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: GSE139627_supp_metadata
+          path: |
+            TableS1_candidate.xlsx
+            supplementary_xlsx_inventory.csv
+            GSE139627_mouse_sample_metadata.txt.gz
+          retention-days: 1
