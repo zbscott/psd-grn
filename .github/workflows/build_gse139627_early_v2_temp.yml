@@ -22,6 +22,7 @@ jobs:
           curl -L --fail --retry 3 -o SmartSeq2.TPM.txt.gz             'https://ftp.ncbi.nlm.nih.gov/geo/series/GSE139nnn/GSE139627/suppl/GSE139627_Mouse_SmartSeq2.TPM.txt.gz'
           curl -L --fail --retry 3 -o dorothea_mm.rda             'https://raw.githubusercontent.com/saezlab/dorothea/master/data/dorothea_mm.rda'
           curl -L --fail --retry 3 -o trrust_rawdata.mouse.tsv             'https://raw.githubusercontent.com/Cold7/mouse_reference_net/master/trrust_rawdata.mouse.tsv'
+          curl -L --fail --retry 3 -o gencode.vM25.annotation.gtf.gz             'https://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_mouse/release_M25/gencode.vM25.annotation.gtf.gz'
       - name: Build early branch
         shell: bash
         run: |
@@ -87,6 +88,32 @@ jobs:
           pt=np.asarray(adata.obs['dpt_pseudotime'],float)
           if not np.isfinite(pt).all(): raise RuntimeError('non-finite DPT')
           pt=(pt-pt.min())/(pt.max()-pt.min()+1e-12)
+
+          # Map GEO Ensembl gene IDs to GRCm38/mm10 gene symbols using GENCODE M25.
+          import re
+          id_to_symbol={}
+          with gzip.open('gencode.vM25.annotation.gtf.gz','rt') as fh:
+              for line in fh:
+                  if line.startswith('#'):
+                      continue
+                  parts=line.rstrip('\n').split('\t')
+                  if len(parts)<9 or parts[2] != 'gene':
+                      continue
+                  attrs=parts[8]
+                  mg=re.search(r'gene_id "([^"]+)"',attrs)
+                  mn=re.search(r'gene_name "([^"]+)"',attrs)
+                  if mg and mn:
+                      id_to_symbol[mg.group(1).split('.')[0]]=mn.group(1)
+          raw_ids=np.asarray(tpm.index.astype(str))
+          mapped=[id_to_symbol.get(x.split('.')[0]) for x in raw_ids]
+          keep=np.array([x is not None for x in mapped])
+          mapping_df=pd.DataFrame({'ensembl_gene_id':raw_ids,'gene_symbol':mapped,'mapped':keep})
+          mapping_df.to_csv(OUT+'/ensembl_to_gene_symbol.csv',index=False)
+          tpm=tpm.loc[keep].copy()
+          tpm.index=[mapped[i] for i in np.where(keep)[0]]
+          # If multiple Ensembl loci map to the same symbol, aggregate TPM deterministically.
+          if tpm.index.duplicated().any():
+              tpm=tpm.groupby(level=0,sort=True).sum()
 
           # Signed mouse prior: DoRothEA A/B/C + TRRUST explicit activation/repression.
           rr=pyreadr.read_r('dorothea_mm.rda')
@@ -164,7 +191,10 @@ jobs:
             'prior_sources':'DoRothEA mouse A/B/C + TRRUST mouse explicit Activation/Repression',
             'prior_activation_edges':int((gold.sign==1).sum()),'prior_repression_edges':int((gold.sign==-1).sum()),
             'prior_recorded_edges':int(len(gold)),'conflicting_ordered_pairs_removed':int(len(conflict)),
-            'annotation_TPM_missing_cells':missing
+            'annotation_TPM_missing_cells':missing,
+            'ensembl_gene_ids_total':int(len(raw_ids)),
+            'ensembl_gene_ids_mapped':int(keep.sum()),
+            'ensembl_mapping_rate':float(keep.mean())
           }
           with open(OUT+'/audit.json','w') as f: json.dump(audit,f,indent=2,ensure_ascii=False)
           open(OUT+'/README.md','w').write(
@@ -176,6 +206,11 @@ jobs:
           shutil.copy2('dorothea_mm.rda',OUT+'/source/dorothea_mm.rda')
           shutil.copy2('trrust_rawdata.mouse.tsv',OUT+'/source/trrust_rawdata.mouse.tsv')
           shutil.copy2('build_gse139627_early.py',OUT+'/scripts/build_gse139627_early.py')
+          gtf_sha=hashlib.sha256(open('gencode.vM25.annotation.gtf.gz','rb').read()).hexdigest()
+          open(OUT+'/source/GENCODE_M25_source.txt','w').write(
+              'URL=https://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_mouse/release_M25/gencode.vM25.annotation.gtf.gz\n'
+              + 'SHA256=' + gtf_sha + '\n'
+          )
           # source URL/checksum record instead of duplicating 56MB TPM into core package
           sha=hashlib.sha256(open('SmartSeq2.TPM.txt.gz','rb').read()).hexdigest()
           open(OUT+'/source/SmartSeq2_TPM_source.txt','w').write(
