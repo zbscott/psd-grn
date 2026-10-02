@@ -1,0 +1,21 @@
+name: temp-fetch-gse139627-tableS1
+on:
+  push:
+    paths:
+      - '.github/workflows/fetch_gse139627_tableS1_temp.yml'
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download Table S1
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -L --fail --retry 3 -o GSE139627_TableS1.xlsx             'https://static-content.springer.com/esm/art%3A10.1038%2Fs41422-021-00486-w/MediaObjects/41422_2021_486_MOESM11_ESM.xlsx'
+          ls -lh GSE139627_TableS1.xlsx
+          sha256sum GSE139627_TableS1.xlsx
+      - uses: actions/upload-artifact@v4
+        with:
+          name: GSE139627_TableS1
+          path: GSE139627_TableS1.xlsx
+          retention-days: 1
