@@ -2,7 +2,7 @@ name: temp-build-gse139627-early-v2
 on:
   push:
     paths:
-      - '.github/workflows/build_gse139627_early_temp.yml'
+      - '.github/workflows/build_gse139627_early_v2_temp.yml'
 jobs:
   build:
     runs-on: ubuntu-latest
